@@ -1,0 +1,32 @@
+aid: coindcx
+name: CoinDCX
+description: "Cryptocurrency Trading Platform"
+url: https://docs.coindcx.com/
+specificationVersion: '0.20'
+created: '2026-05-28'
+modified: '2026-05-28'
+x-source: public-apis/public-apis
+x-category: "Cryptocurrency"
+x-tier: 3
+x-tier-reason: bulk-registered-from-public-apis
+tags:
+  - Cryptocurrency
+  - Public APIs
+apis:
+  - name: CoinDCX
+    description: "Cryptocurrency Trading Platform"
+    humanURL: https://docs.coindcx.com/
+    baseURL: https://docs.coindcx.com/
+    tags:
+      - Cryptocurrency
+    properties:
+      - type: Documentation
+        url: https://docs.coindcx.com/
+common:
+  - type: Website
+    url: https://docs.coindcx.com/
+  - type: PublicAPIsListing
+    url: https://github.com/public-apis/public-apis
+maintainers:
+  - FN: Kin Lane
+    email: kin@apievangelist.com
