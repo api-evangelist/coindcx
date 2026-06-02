@@ -1,0 +1,446 @@
+asyncapi: '2.6.0'
+info:
+  title: CoinDCX Streaming Socket.IO API
+  version: '1.0.0'
+  description: >-
+    AsyncAPI 2.6 description of CoinDCX's public and authenticated streaming
+    interface. CoinDCX exposes a Socket.IO endpoint at https://stream.coindcx.com
+    that delivers real-time orderbook, trade, price, price-statistics, and
+    candlestick data for spot and futures markets, plus authenticated channels
+    for the signed-in user's balance, order, trade, and (for futures) position
+    updates.
+
+    Channel subscription is driven by client-emitted "join" and "leave" events
+    that reference a string channelName. Public market channels follow the
+    pattern <EXCHANGE>-<BASE>_<QUOTE>@<topic> (for example B-BTC_USDT@orderbook)
+    where the EXCHANGE prefix is one of B, I, HB, or KC. Candlestick channels
+    use the form candlestick@<EXCHANGE>-<BASE>_<QUOTE>_<interval>. The
+    authenticated user-data channel name is "coindcx" and the join payload
+    must include a JSON body together with an HMAC-SHA256 authSignature
+    computed with the API secret over that body, along with the apiKey.
+
+    Only Socket.IO client version 2.4.0 is supported by the server.
+  contact:
+    name: CoinDCX API Support
+    url: https://docs.coindcx.com/
+  license:
+    name: CoinDCX API Terms
+    url: https://coindcx.com/terms-of-use
+defaultContentType: application/json
+servers:
+  production:
+    url: stream.coindcx.com
+    protocol: wss
+    description: >-
+      Production Socket.IO streaming endpoint. Use the Socket.IO client
+      protocol (only socket.io-client@2.4.0 is supported) over secure
+      WebSocket transport.
+channels:
+  join:
+    description: >-
+      Client-emitted Socket.IO event used to subscribe to a channel. For
+      public market channels the payload is a string such as
+      "B-BTC_USDT@orderbook". For the authenticated user-data channel the
+      payload is a JSON object containing channelName "coindcx", a stringified
+      body with at least a timestamp, an HMAC-SHA256 authSignature of that
+      body computed with the API secret, and the apiKey.
+    bindings:
+      ws:
+        bindingVersion: '0.1.0'
+    publish:
+      operationId: joinChannel
+      summary: Subscribe to a public or authenticated streaming channel.
+      message:
+        oneOf:
+          - $ref: '#/components/messages/PublicJoin'
+          - $ref: '#/components/messages/AuthenticatedJoin'
+  leave:
+    description: >-
+      Client-emitted Socket.IO event used to unsubscribe from a previously
+      joined channel. The payload is the same channelName string passed to
+      join.
+    bindings:
+      ws:
+        bindingVersion: '0.1.0'
+    publish:
+      operationId: leaveChannel
+      summary: Unsubscribe from a previously joined channel.
+      message:
+        $ref: '#/components/messages/Leave'
+  depth-snapshot:
+    description: >-
+      Full orderbook snapshot for a market channel of the form
+      <EXCHANGE>-<BASE>_<QUOTE>@orderbook.
+    bindings:
+      ws:
+        bindingVersion: '0.1.0'
+    subscribe:
+      operationId: receiveDepthSnapshot
+      summary: Receive an orderbook snapshot event.
+      message:
+        $ref: '#/components/messages/DepthSnapshot'
+  depth-update:
+    description: >-
+      Incremental orderbook update for a market channel of the form
+      <EXCHANGE>-<BASE>_<QUOTE>@orderbook. Updates should be applied on top
+      of the most recent depth-snapshot for the same channel.
+    bindings:
+      ws:
+        bindingVersion: '0.1.0'
+    subscribe:
+      operationId: receiveDepthUpdate
+      summary: Receive an incremental orderbook update event.
+      message:
+        $ref: '#/components/messages/DepthUpdate'
+  new-trade:
+    description: >-
+      Incoming trade notification for a market channel of the form
+      <EXCHANGE>-<BASE>_<QUOTE>@trades.
+    bindings:
+      ws:
+        bindingVersion: '0.1.0'
+    subscribe:
+      operationId: receiveNewTrade
+      summary: Receive a public trade event for a market.
+      message:
+        $ref: '#/components/messages/NewTrade'
+  currentPrices:
+    description: >-
+      Real-time price feed for a market channel of the form
+      <EXCHANGE>-<BASE>_<QUOTE>@prices.
+    bindings:
+      ws:
+        bindingVersion: '0.1.0'
+    subscribe:
+      operationId: receiveCurrentPrices
+      summary: Receive a current-prices event for a market.
+      message:
+        $ref: '#/components/messages/CurrentPrices'
+  price-change:
+    description: >-
+      Last traded price (LTP) movement for a market channel of the form
+      <EXCHANGE>-<BASE>_<QUOTE>@prices.
+    bindings:
+      ws:
+        bindingVersion: '0.1.0'
+    subscribe:
+      operationId: receivePriceChange
+      summary: Receive a last-traded-price change event for a market.
+      message:
+        $ref: '#/components/messages/PriceChange'
+  price-stats:
+    description: >-
+      Rolling price statistics for a market channel of the form
+      <EXCHANGE>-<BASE>_<QUOTE>@prices-stats.
+    bindings:
+      ws:
+        bindingVersion: '0.1.0'
+    subscribe:
+      operationId: receivePriceStats
+      summary: Receive a price-statistics event for a market.
+      message:
+        $ref: '#/components/messages/PriceStats'
+  candlestick:
+    description: >-
+      Candlestick (OHLCV) updates for a candlestick channel of the form
+      candlestick@<EXCHANGE>-<BASE>_<QUOTE>_<interval> (for example
+      candlestick@B-BTC_USDT_1m).
+    bindings:
+      ws:
+        bindingVersion: '0.1.0'
+    subscribe:
+      operationId: receiveCandlestick
+      summary: Receive a candlestick event for a market and interval.
+      message:
+        $ref: '#/components/messages/Candlestick'
+  balance-update:
+    description: >-
+      Authenticated user-data event delivered on the "coindcx" channel
+      whenever the signed-in user's wallet balance changes.
+    bindings:
+      ws:
+        bindingVersion: '0.1.0'
+    subscribe:
+      operationId: receiveBalanceUpdate
+      summary: Receive a balance update for the authenticated user.
+      message:
+        $ref: '#/components/messages/BalanceUpdate'
+  order-update:
+    description: >-
+      Authenticated user-data event delivered on the "coindcx" channel for
+      lifecycle changes to the signed-in user's spot or futures orders.
+    bindings:
+      ws:
+        bindingVersion: '0.1.0'
+    subscribe:
+      operationId: receiveOrderUpdate
+      summary: Receive an order lifecycle update for the authenticated user.
+      message:
+        $ref: '#/components/messages/OrderUpdate'
+  trade-update:
+    description: >-
+      Authenticated user-data event delivered on the "coindcx" channel for
+      the signed-in user's executed trades (fills).
+    bindings:
+      ws:
+        bindingVersion: '0.1.0'
+    subscribe:
+      operationId: receiveTradeUpdate
+      summary: Receive an executed trade event for the authenticated user.
+      message:
+        $ref: '#/components/messages/TradeUpdate'
+  position-update:
+    description: >-
+      Authenticated user-data event delivered on the "coindcx" channel for
+      changes to the signed-in user's futures positions.
+    bindings:
+      ws:
+        bindingVersion: '0.1.0'
+    subscribe:
+      operationId: receivePositionUpdate
+      summary: Receive a futures position update for the authenticated user.
+      message:
+        $ref: '#/components/messages/PositionUpdate'
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: user
+      description: >-
+        API key issued in the CoinDCX user dashboard. Passed in the join
+        payload for the "coindcx" channel as the apiKey field.
+    hmacAuth:
+      type: symmetricEncryption
+      description: >-
+        HMAC-SHA256 signature of the join payload body, computed with the
+        API secret and hex-encoded. Passed in the join payload for the
+        "coindcx" channel as the authSignature field.
+  messages:
+    PublicJoin:
+      name: PublicJoin
+      title: Public Channel Join Request
+      summary: >-
+        String channel name used to subscribe to a public market channel,
+        for example B-BTC_USDT@orderbook, B-BTC_USDT@trades,
+        B-BTC_USDT@prices, B-BTC_USDT@prices-stats, or
+        candlestick@B-BTC_USDT_1m.
+      contentType: application/json
+      payload:
+        type: string
+        example: B-BTC_USDT@orderbook
+    AuthenticatedJoin:
+      name: AuthenticatedJoin
+      title: Authenticated Channel Join Request
+      summary: >-
+        Join payload for the authenticated user-data channel. The body field
+        is a JSON-stringified object containing at least a timestamp; the
+        authSignature is the hex HMAC-SHA256 of that string computed with
+        the API secret.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/AuthenticatedJoin'
+    Leave:
+      name: Leave
+      title: Channel Leave Request
+      summary: Channel name string previously passed to join.
+      contentType: application/json
+      payload:
+        type: string
+        example: B-BTC_USDT@orderbook
+    DepthSnapshot:
+      name: DepthSnapshot
+      title: Orderbook Snapshot
+      summary: Full orderbook snapshot for a market.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/DepthSnapshot'
+    DepthUpdate:
+      name: DepthUpdate
+      title: Orderbook Incremental Update
+      summary: Incremental orderbook update for a market.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/DepthUpdate'
+    NewTrade:
+      name: NewTrade
+      title: Public Trade
+      summary: Public trade event for a market.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/NewTrade'
+    CurrentPrices:
+      name: CurrentPrices
+      title: Current Prices
+      summary: Current-price event for a market.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/CurrentPrices'
+    PriceChange:
+      name: PriceChange
+      title: Last Traded Price Change
+      summary: Last traded price movement for a market.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/PriceChange'
+    PriceStats:
+      name: PriceStats
+      title: Price Statistics
+      summary: Rolling price statistics for a market.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/PriceStats'
+    Candlestick:
+      name: Candlestick
+      title: Candlestick
+      summary: Candlestick (OHLCV) update for a market and interval.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/Candlestick'
+    BalanceUpdate:
+      name: BalanceUpdate
+      title: Balance Update
+      summary: Authenticated wallet balance change event.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BalanceUpdate'
+    OrderUpdate:
+      name: OrderUpdate
+      title: Order Update
+      summary: Authenticated order lifecycle event.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/OrderUpdate'
+    TradeUpdate:
+      name: TradeUpdate
+      title: Trade Update
+      summary: Authenticated executed trade event.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/TradeUpdate'
+    PositionUpdate:
+      name: PositionUpdate
+      title: Position Update
+      summary: Authenticated futures position change event.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/PositionUpdate'
+  schemas:
+    AuthenticatedJoin:
+      type: object
+      required:
+        - channelName
+        - authSignature
+        - apiKey
+      properties:
+        channelName:
+          type: string
+          description: >-
+            Authenticated user-data channel name. Use "coindcx" to subscribe
+            to balance, order, and trade updates for the signed-in user.
+          example: coindcx
+        body:
+          type: string
+          description: >-
+            JSON-stringified payload that was signed. Must contain at least
+            a numeric timestamp in milliseconds.
+          example: '{"timestamp":1700000000000}'
+        authSignature:
+          type: string
+          description: >-
+            Hex-encoded HMAC-SHA256 of the body string, computed using the
+            API secret as the HMAC key.
+        apiKey:
+          type: string
+          description: CoinDCX API key issued in the user dashboard.
+    DepthSnapshot:
+      type: object
+      description: >-
+        Full orderbook snapshot for the subscribed market channel. The
+        documented topic suffix is @orderbook and the documented exchange
+        prefixes are B, I, HB, and KC.
+      properties:
+        channel:
+          type: string
+          description: Channel name the snapshot was emitted on.
+          example: B-BTC_USDT@orderbook
+      additionalProperties: true
+    DepthUpdate:
+      type: object
+      description: >-
+        Incremental orderbook update for the subscribed market channel.
+        Apply on top of the most recent depth-snapshot for the same channel.
+      properties:
+        channel:
+          type: string
+          example: B-BTC_USDT@orderbook
+      additionalProperties: true
+    NewTrade:
+      type: object
+      description: Public trade event for the subscribed market channel.
+      properties:
+        channel:
+          type: string
+          example: B-BTC_USDT@trades
+      additionalProperties: true
+    CurrentPrices:
+      type: object
+      description: Current-prices event for the subscribed market channel.
+      properties:
+        channel:
+          type: string
+          example: B-BTC_USDT@prices
+      additionalProperties: true
+    PriceChange:
+      type: object
+      description: >-
+        Last traded price (LTP) movement event for the subscribed market
+        channel.
+      properties:
+        channel:
+          type: string
+          example: B-BTC_USDT@prices
+      additionalProperties: true
+    PriceStats:
+      type: object
+      description: >-
+        Rolling price-statistics event for the subscribed market channel
+        (topic suffix @prices-stats).
+      properties:
+        channel:
+          type: string
+          example: B-BTC_USDT@prices-stats
+      additionalProperties: true
+    Candlestick:
+      type: object
+      description: >-
+        Candlestick (OHLCV) event for a candlestick channel of the form
+        candlestick@<EXCHANGE>-<BASE>_<QUOTE>_<interval>.
+      properties:
+        channel:
+          type: string
+          example: candlestick@B-BTC_USDT_1m
+      additionalProperties: true
+    BalanceUpdate:
+      type: object
+      description: >-
+        Authenticated wallet balance change event delivered on the "coindcx"
+        channel.
+      additionalProperties: true
+    OrderUpdate:
+      type: object
+      description: >-
+        Authenticated order lifecycle event delivered on the "coindcx"
+        channel.
+      additionalProperties: true
+    TradeUpdate:
+      type: object
+      description: >-
+        Authenticated executed trade event delivered on the "coindcx"
+        channel.
+      additionalProperties: true
+    PositionUpdate:
+      type: object
+      description: >-
+        Authenticated futures position change event delivered on the
+        "coindcx" channel.
+      additionalProperties: true

@@ -4,7 +4,7 @@ description: "Cryptocurrency Trading Platform"
 url: https://docs.coindcx.com/
 specificationVersion: '0.20'
 created: '2026-05-28'
-modified: '2026-05-28'
+modified: '2026-05-30'
 x-source: public-apis/public-apis
 x-category: "Cryptocurrency"
 x-tier: 3
@@ -22,6 +22,28 @@ apis:
     properties:
       - type: Documentation
         url: https://docs.coindcx.com/
+  - aid: coindcx:streaming-api
+    name: CoinDCX Streaming Socket.IO API
+    description: >-
+      Real-time Socket.IO streaming at stream.coindcx.com for public spot and
+      futures market data (orderbook depth, public trades, current prices,
+      price statistics, last-traded price, candlesticks) and authenticated
+      user-data channels (balance, order, trade, and futures position updates).
+      Only socket.io-client version 2.4.0 is supported by the server.
+    humanURL: https://docs.coindcx.com/#sockets
+    baseURL: https://stream.coindcx.com
+    tags:
+      - Cryptocurrency
+      - Streaming
+      - WebSocket
+      - Socket.IO
+      - Market Data
+      - Real-time
+    properties:
+      - type: Documentation
+        url: https://docs.coindcx.com/#sockets
+      - type: AsyncAPI
+        url: asyncapi/coindcx-asyncapi.yml
 common:
   - type: Website
     url: https://docs.coindcx.com/
