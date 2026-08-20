@@ -50,6 +50,13 @@ apis:
       - WebSocket
       - Socket.IO
       - Market Data
+      - Real-Time
+    tags_raw:
+      - Cryptocurrency
+      - Streaming
+      - WebSocket
+      - Socket.IO
+      - Market Data
       - Real-time
     properties:
       - type: Documentation
