@@ -1,0 +1,25 @@
+# Front Door AI Index — coindcx — 2026-09-17
+# AI vocabulary counted on the provider's root page. Generated; do not edit.
+# `score` is null unless ownership is `own` — see front_door_ai.py.
+front_door_ai:
+  slug: coindcx
+  lexicon_version: '1.0'
+  probed_at: '2026-09-17'
+  host: docs.coindcx.com
+  final_host: docs.coindcx.com
+  ownership: own
+  owner: coindcx
+  shares_host_with: null
+  inherited_from: null
+  verdict: silent
+  score: 0
+  host_score: 0
+  density: 0.0
+  words: 35020
+  tiers:
+    agentic: 0
+    core: 0
+    model: 0
+  ambiguous: 1
+  top_terms:
+    agent: 1
